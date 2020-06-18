@@ -12,7 +12,7 @@ Use composer to install the package and its recipes:
 
 After the installation include the recipes:
 
-`require __DIR__ . '/vendor/plutonianbe/deployer-craftcms-db/db.php';`
+`require __DIR__ . '/vendor/plutonianbe/deployer-craftcms-db/craft-db.php';`
 
 ## Available tasks
 
