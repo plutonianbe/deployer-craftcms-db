@@ -8,7 +8,7 @@ Database information and credentials get read from the `.env` file, by parsing `
 
 Use composer to install the package and its recipes:
 
-`composer install plutonianbe/deployer-craftcms-db --dev`
+`composer require plutonianbe/deployer-craftcms-db --dev`
 
 After the installation include the recipes:
 
