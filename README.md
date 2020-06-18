@@ -1,2 +1,2 @@
 # deployer-craftcms-db
-Deployer recipe do be able to push and pull a database
+Deployer recipe to be able to push and pull a database
