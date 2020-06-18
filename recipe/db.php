@@ -17,9 +17,9 @@ task('db:pull', function () {
     download('{{release_path}}/' . $filename, $filename);
     run('rm {{release_path}}/' . $filename);
 
-    $importItLocally = ask('Do you want to import it locally?',  'n', ['y', 'n']);
+    $importItLocally = askConfirmation('Do you want to import it locally?', false);
 
-    if (strtolower($importItLocally) !== 'y') {
+    if ($importItLocally === false) {
         return;
     }
 
@@ -29,10 +29,17 @@ task('db:pull', function () {
         export DB_USER=$(cat .env | grep DB_USER | cut -d "=" -f 2 | sed -e "s/^\"//" -e "s/\"$//");
         export DB_PASSWORD=$(cat .env | grep DB_PASSWORD | cut -d "=" -f 2,3,4 | sed -e "s/^\"//" -e "s/\"$//");
         gunzip < ' . $filename . ' | mysql -h $DB_HOST -P $DB_PORT -u $DB_USER --password="$DB_PASSWORD" $DB_NAME');
+    runLocally('rm ' . $filename);
 });
 
-desc('Push local database on host');
+desc('Push local database to host');
 task('db:push', function () {
+    $confirmReplace = askConfirmation('Are you sure you want to replace the remote database by a local copy?', false);
+
+    if ($confirmReplace === false) {
+        return;
+    }
+
     $filename = 'db_dump_' . date('YmdHis') . '.gz';
 
     runLocally('export DB_HOST=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed "s/host=\(.*\);port.*/\1/");
@@ -51,6 +58,5 @@ task('db:push', function () {
         export DB_USER=$(cat .env | grep DB_USER | cut -d "=" -f 2 | sed -e "s/^\"//" -e "s/\"$//");
         export DB_PASSWORD=$(cat .env | grep DB_PASSWORD | cut -d "=" -f 2,3,4 | sed -e "s/^\"//" -e "s/\"$//");
         gunzip < ' . $filename . ' | mysql -h $DB_HOST -P $DB_PORT -u $DB_USER --password="$DB_PASSWORD" $DB_NAME');
-
     run('rm ' . $filename);
 });
