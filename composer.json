@@ -1,0 +1,15 @@
+{
+    "name": "plutonianbe/deployer-craftcms-db",
+    "description": "Deployer recipe for CraftCMS 3 that provides database pull and push functionalities.",
+    "type": "library",
+    "require-dev": {
+        "deployer/deployer": "^6.8"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bruno Vitorino",
+            "email": "bruno@plutonian.be"
+        }
+    ]
+}
