@@ -17,9 +17,11 @@ task('db:pull', function () {
     download('{{release_path}}/' . $filename, $filename);
     run('rm {{release_path}}/' . $filename);
 
-    $importItLocally = askConfirmation('Do you want to import it locally?', false);
+    $importItLocally = askConfirmation('Do you want to replace the local database with a remote copy?', false);
 
     if ($importItLocally === false) {
+        writeln('You can find a copy of the remote database here: ' . $filename);
+
         return;
     }
 
