@@ -2,6 +2,10 @@
 
 namespace Deployer;
 
+use Symfony\Component\Console\Input\InputOption;
+
+option('import', null, InputOption::VALUE_NONE, 'Auto-import the database when using db:pull');
+
 desc('Pull remote database');
 task('db:pull', function () {
     $filename = 'db_dump_' . date('YmdHis') . '.gz';
@@ -17,7 +21,14 @@ task('db:pull', function () {
     download('{{release_path}}/' . $filename, $filename);
     run('rm {{release_path}}/' . $filename);
 
-    $importItLocally = askConfirmation('Do you want to replace the local database with a remote copy?', false);
+    $importItLocally = false;
+    if (input()->hasOption('import')) {
+        $importItLocally = input()->getOption('import');
+    }
+
+    if ($importItLocally === false) {
+        $importItLocally = askConfirmation('Do you want to replace the local database with a remote copy?', true);
+    }
 
     if ($importItLocally === false) {
         writeln('You can find a copy of the remote database here: ' . $filename);
