@@ -2,22 +2,28 @@
 
 namespace Deployer;
 
+use Symfony\Component\Console\Input\InputOption;
+
+option('import', null, InputOption::VALUE_NONE, 'Auto-import the database when using db:pull');
+
 desc('Pull remote database');
 task('db:pull', function () {
-    $filename = 'db_dump_' . date('YmdHis') . '.gz';
+    $filePath = 'storage/backups/deployer_db_dump_' . date('YmdHis') . '.sql';
 
     cd('{{release_path}}');
 
-    run('export DB_HOST=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed "s/host=\(.*\);port.*/\1/");
-        export DB_PORT=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*port=\(.*\);dbname.*/\1/");
-        export DB_NAME=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*dbname=\(.*\);.*/\1/");
-        export DB_USER=$(cat .env | grep DB_USER | cut -d "=" -f 2 | sed -e "s/^\"//" -e "s/\"$//");
-        export DB_PASSWORD=$(cat .env | grep DB_PASSWORD | cut -d "=" -f 2,3,4 | sed -e "s/^\"//" -e "s/\"$//");
-        mysqldump -h $DB_HOST -P $DB_PORT -u $DB_USER --password="$DB_PASSWORD" $DB_NAME | gzip > ' . $filename);
-    download('{{release_path}}/' . $filename, $filename);
-    run('rm {{release_path}}/' . $filename);
+    run('{{release_path}}/craft backup/db');
+    download('`ls -tdr {{release_path}}/storage/backups/* | tail -1`', $filePath);
+    run('rm `ls -tdr {{release_path}}/storage/backups/* | tail -1`');
 
-    $importItLocally = askConfirmation('Do you want to replace the local database with a remote copy?', false);
+    $importItLocally = false;
+    if (input()->hasOption('import')) {
+        $importItLocally = input()->getOption('import');
+    }
+
+    if ($importItLocally === false) {
+        $importItLocally = askConfirmation('Do you want to replace the local database with a remote copy?', true);
+    }
 
     if ($importItLocally === false) {
         writeln('You can find a copy of the remote database here: ' . $filename);
@@ -25,13 +31,8 @@ task('db:pull', function () {
         return;
     }
 
-    runLocally('export DB_HOST=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed "s/host=\(.*\);port.*/\1/");
-        export DB_PORT=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*port=\(.*\);dbname.*/\1/");
-        export DB_NAME=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*dbname=\(.*\);.*/\1/");
-        export DB_USER=$(cat .env | grep DB_USER | cut -d "=" -f 2 | sed -e "s/^\"//" -e "s/\"$//");
-        export DB_PASSWORD=$(cat .env | grep DB_PASSWORD | cut -d "=" -f 2,3,4 | sed -e "s/^\"//" -e "s/\"$//");
-        gunzip < ' . $filename . ' | mysql -h $DB_HOST -P $DB_PORT -u $DB_USER --password="$DB_PASSWORD" $DB_NAME');
-    runLocally('rm ' . $filename);
+    runLocally("./craft restore/db $filePath");
+    runLocally("rm $filePath");
 });
 
 desc('Push local database to host');
@@ -42,23 +43,21 @@ task('db:push', function () {
         return;
     }
 
-    $filename = 'db_dump_' . date('YmdHis') . '.gz';
+    $filePath = 'storage/backups/deployer_db_dump_' . date('YmdHis') . '.sql';
 
-    runLocally('export DB_HOST=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed "s/host=\(.*\);port.*/\1/");
-        export DB_PORT=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*port=\(.*\);dbname.*/\1/");
-        export DB_NAME=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*dbname=\(.*\);.*/\1/");
-        export DB_USER=$(cat .env | grep DB_USER | cut -d "=" -f 2 | sed -e "s/^\"//" -e "s/\"$//");
-        export DB_PASSWORD=$(cat .env | grep DB_PASSWORD | cut -d "=" -f 2,3,4 | sed -e "s/^\"//" -e "s/\"$//");
-        mysqldump --column-statistics=0 -h $DB_HOST -P $DB_PORT -u $DB_USER --password="$DB_PASSWORD" $DB_NAME | gzip > ' . $filename);
-    upload($filename, '{{release_path}}/' . $filename);
-    runLocally('rm ' . $filename);
+    runLocally("./craft backup/db $filePath");
+
+    if (!test('[ -d {{release_path}}/storage/backups ]')) {
+        if (!commandExist('mkdir')) {
+            fail('{{release_path}}/storage/backups does not exist and it cannot be created with the mkdir command');
+        }
+        run('mkdir {{release_path}}/storage/backups');
+    }
+
+    upload($filePath, "{{release_path}}/$filePath");
+    runLocally("rm $filePath");
 
     cd('{{release_path}}');
-    run('export DB_HOST=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed "s/host=\(.*\);port.*/\1/");
-        export DB_PORT=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*port=\(.*\);dbname.*/\1/");
-        export DB_NAME=$(cat .env | grep DB_DSN | cut -d ":" -f 2 | sed -e "s/.*dbname=\(.*\);.*/\1/");
-        export DB_USER=$(cat .env | grep DB_USER | cut -d "=" -f 2 | sed -e "s/^\"//" -e "s/\"$//");
-        export DB_PASSWORD=$(cat .env | grep DB_PASSWORD | cut -d "=" -f 2,3,4 | sed -e "s/^\"//" -e "s/\"$//");
-        gunzip < ' . $filename . ' | mysql -h $DB_HOST -P $DB_PORT -u $DB_USER --password="$DB_PASSWORD" $DB_NAME');
-    run('rm ' . $filename);
+    run("./craft restore/db $filePath");
+    run("rm $filePath");
 });
