@@ -26,7 +26,7 @@ task('db:pull', function () {
     }
 
     if ($importItLocally === false) {
-        writeln('You can find a copy of the remote database here: ' . $filename);
+        writeln('You can find a copy of the remote database here: ' . $filePath);
 
         return;
     }
