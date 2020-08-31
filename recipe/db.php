@@ -13,7 +13,16 @@ task('db:pull', function () {
     cd('{{release_path}}');
 
     run('{{release_path}}/craft backup/db');
+
+    if (!testLocally('[ -d storage/backups ]')) {
+        if (!testLocally("hash mkdir 2>/dev/null")) {
+            fail('storage/backups does not exist and it cannot be created with the mkdir command');
+        }
+        runLocally('mkdir storage/backups');
+    }
+
     download('`ls -tdr {{release_path}}/storage/backups/* | tail -1`', $filePath);
+
     run('rm `ls -tdr {{release_path}}/storage/backups/* | tail -1`');
 
     $importItLocally = false;
