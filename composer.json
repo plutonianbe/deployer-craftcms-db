@@ -4,7 +4,8 @@
     "type": "library",
     "require": {
         "craftcms/cms": ">=3.0",
-        "deployer/deployer": "^6.8"
+        "deployer/deployer": "^6.8",
+        "deployer/recipes": "^6.2"
     },
     "license": "MIT",
     "authors": [
