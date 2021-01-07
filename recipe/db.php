@@ -12,7 +12,7 @@ task('db:pull', function () {
 
     cd('{{release_path}}');
 
-    run('{{release_path}}/craft backup/db');
+    run('{{ bin/php }} {{release_path}}/craft backup/db');
 
     if (!testLocally('[ -d storage/backups ]')) {
         if (!testLocally("hash mkdir 2>/dev/null")) {
@@ -67,6 +67,6 @@ task('db:push', function () {
     runLocally("rm $filePath");
 
     cd('{{release_path}}');
-    run("./craft restore/db $filePath");
+    run("{{ bin/php }} ./craft restore/db $filePath");
     run("rm $filePath");
 });
